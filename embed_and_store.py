@@ -1,23 +1,33 @@
 import os
-import pinecone
+from pinecone import Pinecone
 from openai import OpenAI
 import json
 from tqdm import tqdm
+from config import settings
 
 # Initialize OpenAI client
-openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+openai_client = OpenAI(api_key=settings.OPENAI.API_KEY.get_secret_value())
 
 # Initialize Pinecone
-pinecone.init(
-    api_key=os.getenv('PINECONE_API_KEY'),
-    environment=os.getenv('PINECONE_ENVIRONMENT')
+pc = Pinecone(
+    api_key=settings.PINECONE.API_KEY.get_secret_value(),
 )
 
 # Create or connect to Pinecone index
 index_name = 'imdb-reviews'
-if index_name not in pinecone.list_indexes():
-    pinecone.create_index(index_name, dimension=1536, metric='cosine')
-index = pinecone.Index(index_name)
+if index_name not in pc.list_indexes().names():
+    pc.create_index(
+    name=index_name,
+    dimension=1536,
+    metric='cosine',
+    spec={
+        "serverless": {
+            "cloud": "aws",       
+            "region": "us-east-1"
+        }
+    }
+)
+index = pc.Index(index_name)
 
 # Load processed documents
 with open('./data/processed_reviews.json', 'r') as f:
