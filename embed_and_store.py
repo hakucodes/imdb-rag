@@ -1,4 +1,3 @@
-import os
 from pinecone import Pinecone
 from openai import OpenAI
 import json
