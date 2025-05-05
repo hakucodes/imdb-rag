@@ -10,5 +10,6 @@ wheels/
 .venv
 .mypy_cache/
 .env
-data/
+data/*.csv
+data/*.json
 .DS_Store
