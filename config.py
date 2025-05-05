@@ -10,7 +10,7 @@ class PineconeSettings(BaseModel):
     
 class Settings(BaseSettings):
     OPENAI: OpenAISettings
-    PIPECONE: PineconeSettings
+    PINECONE: PineconeSettings
 
     model_config = SettingsConfigDict(
         env_file=".env",
