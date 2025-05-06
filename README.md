@@ -58,6 +58,11 @@ uv run main.py
 ```
 This will process the vectorized data using the RAG architecture.
 
+### 4. Ask your prompt
+Example of interaction with RAG App
+
+![](.github/examples/example1.png)
+
 ## Note
 Make sure all dependencies are installed and API keys are properly configured before running the scripts.
 

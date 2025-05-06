@@ -1,4 +1,4 @@
-from typing import List
+import json
 from pydantic import BaseModel, Field
 from langchain_pinecone import PineconeVectorStore
 from langchain_openai import OpenAIEmbeddings
@@ -20,8 +20,12 @@ class RagResponse(BaseModel):
         ge=0.0,
         le=1.0,
     )
-    sources: List[dict] = Field(
-        description="List of source documents with text, sentiment, and score"
+    sources: list[dict] = Field(
+        description="list of source documents with text, sentiment, and score"
+    )
+    thought_process: list[str] = Field(
+        default_factory=list,
+        description="list of reasoning steps the LLM followed to answer the query"
     )
 
 
@@ -90,13 +94,22 @@ def run_rag(query: str, k: int = RAG_CONFIG["k"]) -> RagResponse:
         - If the context lacks sufficient information to answer fully, clearly state: "The provided reviews do not contain enough information to answer this query fully," and provide a brief general response if applicable.
         - Keep the answer concise, relevant, and focused on the query.
         - If summarizing sentiments, indicate the number of positive/negative reviews in the context.
-        
+
+        Provide your response in the following JSON format:
+        {{
+        "answer": "...",
+        "thought_process": [
+            "Step 1: ...",
+            "Step 2: ...",
+            ...
+        ]
+        }}
+
         Context:
         {context_str}
-        
+
         Query: {query}
-        
-        Answer:"""
+        """
 
         # Call ChatGPT API with error handling
         try:
@@ -112,11 +125,23 @@ def run_rag(query: str, k: int = RAG_CONFIG["k"]) -> RagResponse:
                 max_tokens=RAG_CONFIG["max_tokens"],
                 temperature=RAG_CONFIG["temperature"],
             )
-            answer = (
+            # Inside run_rag
+            response_text = (
                 response.choices[0].message.content.strip()
                 if response.choices[0].message.content
                 else ""
             )
+
+            # Attempt to parse JSON output from model
+            try:
+                structured_output = json.loads(response_text)
+                answer = structured_output.get("answer", "")
+                thought_process = structured_output.get("thought_process", [])
+            except json.JSONDecodeError:
+                logger.warning("Failed to parse JSON from model response. Using raw text.")
+                answer = response_text
+                thought_process = []
+                
         except OpenAIError as e:
             logger.error(f"OpenAI API error: {str(e)}")
             raise RuntimeError(f"Failed to generate response: {str(e)}")
@@ -126,7 +151,7 @@ def run_rag(query: str, k: int = RAG_CONFIG["k"]) -> RagResponse:
             sum(src["score"] for src in sources) / len(sources) if sources else 0.0
         )
 
-        return RagResponse(answer=answer, confidence=confidence, sources=sources)
+        return RagResponse(answer=answer, confidence=confidence, sources=sources, thought_process=thought_process)
 
     except Exception as e:
         logger.error(f"RAG pipeline error: {str(e)}")
@@ -150,8 +175,11 @@ def main():
         try:
             result = run_rag(query)
             print(f"\nAnswer: {result.answer}")
-            print(f"Confidence: {result.confidence:.2%}")
-            print("Sources:")
+            print(f"\nConfidence: {result.confidence:.2%}")
+            print("\nThought process:")
+            for step in result.thought_process:
+                print(f"  - {step}")
+            print("\nSources:")
             for i, source in enumerate(result.sources, 1):
                 print(
                     f"  {i}. Sentiment: {source['sentiment']}, Score: {source['score']}"
