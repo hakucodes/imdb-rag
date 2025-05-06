@@ -37,7 +37,7 @@ for i in tqdm(range(0, len(documents), batch_size), desc="Embedding and upsertin
 
     # Generate embeddings
     response = openai_client.embeddings.create(
-        model="text-embedding-ada-002", input=texts
+        model=settings.OPENAI.EMBEDDING_MODEL, input=texts
     )
     embeddings = [r.embedding for r in response.data]
 

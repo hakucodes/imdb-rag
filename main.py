@@ -30,7 +30,7 @@ RAG_CONFIG = {
     "k": 3,  # Number of documents to retrieve
     "max_tokens": 500,  # Max tokens for ChatGPT response
     "temperature": 0.7,  # Controls response creativity
-    "model": settings.OPENAI.MODEL,
+    "model": settings.OPENAI.DEFAULT_MODEL,
 }
 
 # Initialize OpenAI client
@@ -41,7 +41,7 @@ pc = PineconeClient(api_key=settings.PINECONE.API_KEY.get_secret_value())
 
 # Initialize Pinecone vector store
 embeddings = OpenAIEmbeddings(
-    model="text-embedding-ada-002", api_key=settings.OPENAI.API_KEY
+    model=settings.OPENAI.EMBEDDING_MODEL, api_key=settings.OPENAI.API_KEY
 )
 vector_store = PineconeVectorStore(
     index_name="imdb-reviews",

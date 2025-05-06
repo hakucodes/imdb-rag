@@ -4,7 +4,8 @@ from pydantic import SecretStr, BaseModel
 
 class OpenAISettings(BaseModel):
     API_KEY: SecretStr
-    MODEL: str = "gpt-4o-mini-2024-07-18"
+    DEFAULT_MODEL: str = "gpt-4o-mini-2024-07-18"
+    EMBEDDING_MODEL: str = "text-embedding-ada-002"
 
 
 class PineconeSettings(BaseModel):
