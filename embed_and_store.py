@@ -13,37 +13,31 @@ pc = Pinecone(
 )
 
 # Create or connect to Pinecone index
-index_name = 'imdb-reviews'
+index_name = "imdb-reviews"
 if index_name not in pc.list_indexes().names():
     pc.create_index(
-    name=index_name,
-    dimension=1536,
-    metric='cosine',
-    spec={
-        "serverless": {
-            "cloud": "aws",       
-            "region": "us-east-1"
-        }
-    }
-)
+        name=index_name,
+        dimension=1536,
+        metric="cosine",
+        spec={"serverless": {"cloud": "aws", "region": "us-east-1"}},
+    )
 index = pc.Index(index_name)
 
 # Load processed documents
-with open('./data/processed_reviews.json', 'r') as f:
+with open("./data/processed_reviews.json", "r") as f:
     documents = json.load(f)
 
 # Generate embeddings and store in Pinecone
 batch_size = 100
 for i in tqdm(range(0, len(documents), batch_size), desc="Embedding and upserting"):
-    batch = documents[i:i + batch_size]
-    texts = [doc['text'] for doc in batch]
-    ids = [doc['id'] for doc in batch]
-    metadata = [{'text': doc['text'], 'sentiment': doc['sentiment']} for doc in batch]
+    batch = documents[i : i + batch_size]
+    texts = [doc["text"] for doc in batch]
+    ids = [doc["id"] for doc in batch]
+    metadata = [{"text": doc["text"], "sentiment": doc["sentiment"]} for doc in batch]
 
     # Generate embeddings
     response = openai_client.embeddings.create(
-        model='text-embedding-ada-002',
-        input=texts
+        model="text-embedding-ada-002", input=texts
     )
     embeddings = [r.embedding for r in response.data]
 
