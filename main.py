@@ -25,7 +25,7 @@ class RagResponse(BaseModel):
     )
     thought_process: list[str] = Field(
         default_factory=list,
-        description="list of reasoning steps the LLM followed to answer the query"
+        description="list of reasoning steps the LLM followed to answer the query",
     )
 
 
@@ -138,10 +138,12 @@ def run_rag(query: str, k: int = RAG_CONFIG["k"]) -> RagResponse:
                 answer = structured_output.get("answer", "")
                 thought_process = structured_output.get("thought_process", [])
             except json.JSONDecodeError:
-                logger.warning("Failed to parse JSON from model response. Using raw text.")
+                logger.warning(
+                    "Failed to parse JSON from model response. Using raw text."
+                )
                 answer = response_text
                 thought_process = []
-                
+
         except OpenAIError as e:
             logger.error(f"OpenAI API error: {str(e)}")
             raise RuntimeError(f"Failed to generate response: {str(e)}")
@@ -151,7 +153,12 @@ def run_rag(query: str, k: int = RAG_CONFIG["k"]) -> RagResponse:
             sum(src["score"] for src in sources) / len(sources) if sources else 0.0
         )
 
-        return RagResponse(answer=answer, confidence=confidence, sources=sources, thought_process=thought_process)
+        return RagResponse(
+            answer=answer,
+            confidence=confidence,
+            sources=sources,
+            thought_process=thought_process,
+        )
 
     except Exception as e:
         logger.error(f"RAG pipeline error: {str(e)}")
